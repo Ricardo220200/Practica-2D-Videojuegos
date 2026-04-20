@@ -1,15 +1,15 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // Mantenemos esto para que no te de error en Unity 6
+using UnityEngine.InputSystem; // Necesario para Unity 6
 
 public class Player : MonoBehaviour
 {
     [Header("Referencias")]
-    public Animator animator; // Nuevo: Para controlar las animaciones
+    public Animator animator;
     public Rigidbody2D rb;
 
-    [Header("Ajustes del Tutorial")]
-    public float moveSpeed = 7f;
-    public float jumpHeight = 12f; 
+    [Header("Ajustes de Movimiento")]
+    public float moveSpeed = 5f;
+    public float jumpHeight = 10f; // Súbelo un poco si la gravedad es alta
     public bool isGround = true;
 
     private float movement;
@@ -17,18 +17,17 @@ public class Player : MonoBehaviour
 
     void Start()
     {
-        // Si no arrastraste el RB al inspector, lo busca solo
         if (rb == null) rb = GetComponent<Rigidbody2D>();
     }
 
     void Update()
     {
-        // 1. Obtener movimiento (A, D o Flechas)
+        // 1. Obtener movimiento usando el sistema de Unity 6
         movement = 0;
         if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) movement = -1;
         else if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) movement = 1;
 
-        // 2. Lógica para Girar (Flip) - Como en tus capturas
+        // 2. Lógica para Girar (Flip)
         if (movement < 0f && facingRight) {
             transform.eulerAngles = new Vector3(0f, -180f, 0f);
             facingRight = false;
@@ -38,24 +37,29 @@ public class Player : MonoBehaviour
             facingRight = true;
         }
 
-        // 3. Lógica de Salto
+        // 3. Lógica de Salto (Sistema Moderno)
         if (Keyboard.current.spaceKey.wasPressedThisFrame && isGround) {
             Jump();
             isGround = false;
+            animator.SetBool("Jump", true);
         }
 
-        // 4. Lógica de Animación (Run) - Agregado de tu captura
-        // Si nos estamos moviendo (valor absoluto mayor a 0), activamos Run
-        if (Mathf.Abs(movement) > 0f) {
+        // 4. Lógica de Animación de Correr
+        if (Mathf.Abs(movement) > .1f) {
             animator.SetFloat("Run", 1f);
         } else {
             animator.SetFloat("Run", 0f);
+        }
+
+        // 5. Lógica de Ataque (Clic izquierdo)
+        if (Mouse.current.leftButton.wasPressedThisFrame) {
+            animator.SetTrigger("Attack");
         }
     }
 
     private void FixedUpdate()
     {
-        // Movimiento por posición
+        // Movimiento físico
         transform.position += new Vector3(movement, 0f, 0f) * Time.fixedDeltaTime * moveSpeed;
     }
 
@@ -71,6 +75,7 @@ public class Player : MonoBehaviour
         // Detección de suelo por Tag
         if (collision.gameObject.tag == "Ground") {
             isGround = true;
+            animator.SetBool("Jump", false);
         }
     }
 }
